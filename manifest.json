@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.broken-branch.theoria",
+  "name": "Theoria",
+  "version": "0.1.0",
+  "author": "broken-branch",
+  "license": "MIT",
+  "description": "Watch and drive Theoria from the Omarchy bar: what the current research run is doing, what it has spent, a box to start a new one, and your recent runs. Theoria runs on Claude, ChatGPT, Gemini or a local model.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "activation": "on-demand",
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Theoria",
+    "description": "One bar icon and one panel for Theoria: the running research or decision run, its spend, a brief box, and the recent runs. Theoria itself runs on Claude, ChatGPT, Gemini or any OpenAI-compatible model, including a local one.",
+    "category": "AI",
+    "aliases": [
+      "theoria"
+    ],
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "refreshIntervalSec": 5
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval while a run is going (seconds)",
+        "min": 2,
+        "max": 60,
+        "step": 1,
+        "defaultValue": 5
+      }
+    ]
+  }
+}

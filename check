@@ -1,0 +1,29 @@
+#!/bin/sh
+# check: the gate CI runs. The required files exist, the manifest matches the plugin contract, qmllint accepts every
+# QML file where Qt's tools are installed, and the unit tests of status.js pass.
+set -eu
+cd "$(dirname "$0")"
+
+for file in README.md LICENSE manifest.json preview.png Panel.qml Engine.qml status.js; do
+	[ -f "$file" ] || { printf 'check: missing %s\n' "$file" >&2; exit 1; }
+done
+
+jq -e '.schemaVersion == 1
+	and .id == "io.github.broken-branch.theoria"
+	and .kinds == ["bar-widget"]
+	and .entryPoints.barWidget == "Panel.qml"
+	and (.name and .version and .author and .license and .description)' manifest.json >/dev/null
+
+if command -v omarchy >/dev/null 2>&1; then omarchy plugin validate .; fi
+
+qmllint=/usr/lib/qt6/bin/qmllint
+command -v "$qmllint" >/dev/null 2>&1 || qmllint=$(command -v qmllint || true)
+if [ -n "$qmllint" ]; then
+	# shellcheck disable=SC2046
+	"$qmllint" -I /usr/lib/qt6/qml -I /usr/share/omarchy/shell $(find . -name '*.qml' -not -path './.git/*' | sort)
+else
+	echo "check: qmllint not installed, QML not linted"
+fi
+
+node --test tests/*.test.js
+echo "check: ok"
