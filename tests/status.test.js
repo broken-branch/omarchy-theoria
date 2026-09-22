@@ -60,7 +60,7 @@ test("the status command keeps the control token out of argv", () => {
 test("the open call keeps the token out of argv and puts a run in its JSON body", () => {
   const call = Spawn.openCall(
     "/usr/bin/curl",
-    "http://127.0.0.1:4217/?token=secret",
+    Status.apiUrl("http://127.0.0.1:4217/?token=secret", "/api/open"),
     { run: "run 1" }
   )
   assert.equal(call.command.some(argument => argument.includes("token=")), false)
@@ -78,7 +78,7 @@ test("the open call keeps the token out of argv and puts a run in its JSON body"
 test("the open call puts a brief in its JSON body with curl-config escaping", () => {
   const call = Spawn.openCall(
     "/usr/bin/curl",
-    "http://127.0.0.1:4217/?token=secret",
+    Status.apiUrl("http://127.0.0.1:4217/?token=secret", "/api/open"),
     { brief: "cost & speed?\nnow" }
   )
   assert.equal(call.input.includes('data = "{\\"brief\\":\\"cost & speed?\\\\nnow\\"}"'), true)

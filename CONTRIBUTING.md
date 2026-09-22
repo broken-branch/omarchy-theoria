@@ -15,6 +15,7 @@ renders a report, a plan or a clarify question, it opens the app for those — a
 - `manifest.json` — the plugin contract: id `io.github.broken-branch.theoria`, one `bar-widget` entry point.
 - `Panel.qml` — the bar button and the panel. `RunCard.qml`, `RecentRuns.qml` — the two panel sections.
 - `Engine.qml` — discovery, polling, starting the engine, opening the window.
+- `spawn.js` — safe command, environment and curl-stdin construction for every spawned process.
 - `status.js` — every formatting, ordering and URL decision, as plain functions (see the README's Development
   section). QML holds layout and process wiring only.
 - `tests/status.test.js` — those functions against a status body.
@@ -25,8 +26,7 @@ renders a report, a plan or a clarify question, it opens the app for those — a
 - The engine is started with `setsid -f` and its streams redirected first, or it dies with the QML object that
   spawned it when the shell reloads. The start is bounded: if no status answers within fifteen seconds the panel
   says so and Open works again.
-- The status token reaches `curl` as an argument. That is visible in the process list to the user who owns the
-  session, which is the same user the token belongs to; it avoids a second credential path.
+- The status token reaches `curl` on stdin for both status and open calls. It never appears in process arguments.
 
 ## Standards
 

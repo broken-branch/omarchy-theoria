@@ -125,12 +125,16 @@ function parseDiscovery(raw) {
   }
 }
 
-function statusUrl(serverUrl) {
+function apiUrl(serverUrl, path) {
   var value = String(serverUrl || "")
   var queryAt = value.indexOf("?")
   if (queryAt < 0) return ""
   var origin = value.match(/^https?:\/\/[^/]+/)
-  return origin ? origin[0] + "/api/status" + value.slice(queryAt) : ""
+  return origin ? origin[0] + String(path || "") + value.slice(queryAt) : ""
+}
+
+function statusUrl(serverUrl) {
+  return apiUrl(serverUrl, "/api/status")
 }
 
 function openUrl(body, serverUrl) {
@@ -163,6 +167,7 @@ if (typeof module !== "undefined") {
     statusLabel: statusLabel,
     formatWhen: formatWhen,
     parseDiscovery: parseDiscovery,
+    apiUrl: apiUrl,
     statusUrl: statusUrl,
     openUrl: openUrl
   }

@@ -76,8 +76,8 @@ Item {
     }
     status = parsed
     live = true
+    if (starting) startupError = ""
     starting = false
-    startupError = ""
     pollTimer.restart()
     discoveryRetry.stop()
     startupTimeout.stop()
@@ -130,7 +130,8 @@ Item {
     }
     var target = pendingBrief !== "" ? { brief: pendingBrief }
       : pendingRunId === "" ? {} : { run: pendingRunId }
-    var call = Spawn.openCall(programs.curl, serverUrl, target)
+    var url = Status.apiUrl(serverUrl, "/api/open")
+    var call = Spawn.openCall(programs.curl, url, target)
     openProcess.serverUrl = serverUrl
     openProcess.input = call.input
     openProcess.stdinEnabled = true

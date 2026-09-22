@@ -71,11 +71,7 @@ function statusCall(curl, url) {
 }
 
 /** The open exchange as one piece: neither its token nor its target can leak into argv. */
-function openCall(curl, serverUrl, target) {
-  var value = String(serverUrl || "")
-  var queryAt = value.indexOf("?")
-  var origin = value.match(/^https?:\/\/[^/]+/)
-  var url = queryAt >= 0 && origin ? origin[0] + "/api/open" + value.slice(queryAt) : ""
+function openCall(curl, url, target) {
   return {
     command: [curl, "-sf", "--max-time", "2", "--max-filesize", "100000", "-K", "-"],
     input: curlConfig(url)
