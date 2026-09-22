@@ -50,11 +50,18 @@ test("the stage reads as the round while researching, and as the wait when one i
 })
 
 test("the status command keeps the control token out of argv", () => {
-  const url = Status.statusUrl("http://127.0.0.1:4217/?token=secret")
+  const url = Status.apiUrl("http://127.0.0.1:4217/?token=secret", "/api/status")
   const call = Spawn.statusCall("/usr/bin/curl", url)
   assert.equal(call.command.some(argument => argument.includes("token=")), false)
   assert.equal(call.command.join(" ").includes("secret"), false)
   assert.equal(call.input, 'url = "http://127.0.0.1:4217/api/status?token=secret"\n')
+})
+
+test("an origin-only discovery URL yields the status API URL", () => {
+  assert.equal(
+    Status.apiUrl("http://127.0.0.1:4217?token=secret", "/api/status"),
+    "http://127.0.0.1:4217/api/status?token=secret"
+  )
 })
 
 test("the open call keeps the token out of argv and puts a run in its JSON body", () => {

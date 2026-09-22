@@ -133,9 +133,9 @@ Panel {
           }
 
           Text {
-            visible: !engine.live || engine.startupError !== ""
+            visible: !engine.live || engine.openError !== ""
             width: parent.width
-            text: engine.startupError || "Theoria is not running"
+            text: engine.startupError || engine.openError || "Theoria is not running"
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.body

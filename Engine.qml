@@ -16,6 +16,7 @@ Item {
   property bool live: false
   property bool starting: false
   property string startupError: ""
+  property string openError: ""
   property string pendingRunId: ""
   property string pendingBrief: ""
   property bool pendingOpen: false
@@ -58,7 +59,7 @@ Item {
   }
 
   function probe() {
-    var url = Status.statusUrl(serverUrl)
+    var url = Status.apiUrl(serverUrl, "/api/status")
     if (url === "" || statusProcess.running || missingProgram !== "") return
     var call = Spawn.statusCall(programs.curl, url)
     statusProcess.input = call.input
@@ -76,7 +77,7 @@ Item {
     }
     status = parsed
     live = true
-    if (starting) startupError = ""
+    startupError = ""
     starting = false
     pollTimer.restart()
     discoveryRetry.stop()
@@ -146,10 +147,10 @@ Item {
     pendingRunId = ""
     pendingBrief = ""
     if (!command) {
-      startupError = "Open needs Theoria 2.2 or newer — npm install -g theoria"
+      openError = "Open needs Theoria 2.2 or newer — npm install -g theoria"
       return
     }
-    startupError = ""
+    openError = ""
     launchProcess.command = command
     launchProcess.running = true
   }

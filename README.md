@@ -54,10 +54,10 @@ minute while the engine is idle, and not at all when no engine is running.
 ## What it reads and runs
 
 It watches `~/.local/share/theoria/server.json`, which `theoria open` writes, and reads `GET /api/status` from the
-loopback address and token in that file. To open the app, it asks the engine for a one-time link and passes only that
-link to `omarchy-launch-webapp`; the token never leaves `curl`'s stdin. It also runs `theoria open` to start the engine
-when none is running. Each command is resolved to an absolute path at startup and run with a minimal environment. It
-holds no key, stores nothing and sends nothing off the machine.
+loopback address and token in that file. To open the app, it asks the engine for a one-time link (`POST /api/open`)
+and passes only that link to `omarchy-launch-webapp`; the token never leaves `curl`'s stdin. It also runs `theoria open`
+to start the engine when none is running. Each command is resolved to an absolute path at startup and run with a
+minimal environment. It holds no key, stores nothing and sends nothing off the machine.
 
 ## Development
 
