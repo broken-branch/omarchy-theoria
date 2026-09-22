@@ -60,9 +60,10 @@ Item {
   function probe() {
     var url = Status.statusUrl(serverUrl)
     if (url === "" || statusProcess.running || missingProgram !== "") return
-    statusProcess.input = Spawn.curlConfig(url)
+    var call = Spawn.statusCall(programs.curl, url)
+    statusProcess.input = call.input
     statusProcess.stdinEnabled = true
-    statusProcess.command = Spawn.statusCommand(programs.curl)
+    statusProcess.command = call.command
     statusProcess.running = true
   }
 

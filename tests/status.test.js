@@ -65,9 +65,10 @@ test("the stage reads as the round while researching, and as the wait when one i
 
 test("the status command keeps the control token out of argv", () => {
   const url = Status.statusUrl("http://127.0.0.1:4217/?token=secret")
-  const command = Spawn.statusCommand("/usr/bin/curl")
-  assert.equal(command.some(argument => argument.includes("token=")), false)
-  assert.equal(Spawn.curlConfig(url), 'url = "http://127.0.0.1:4217/api/status?token=secret"\n')
+  const call = Spawn.statusCall("/usr/bin/curl", url)
+  assert.equal(call.command.some(argument => argument.includes("token=")), false)
+  assert.equal(call.command.join(" ").includes("secret"), false)
+  assert.equal(call.input, 'url = "http://127.0.0.1:4217/api/status?token=secret"\n')
 })
 
 test("the resolver returns the first absolute executable and null when absent", async t => {

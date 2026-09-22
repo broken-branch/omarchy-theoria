@@ -62,8 +62,12 @@ function environment(kind, inherited) {
   return result
 }
 
-function statusCommand(curl) {
-  return [curl, "-sf", "--max-time", "2", "--max-filesize", "1000000", "-K", "-"]
+/** The status call as one piece: the URL travels on stdin, so no caller can put the token in argv. */
+function statusCall(curl, url) {
+  return {
+    command: [curl, "-sf", "--max-time", "2", "--max-filesize", "1000000", "-K", "-"],
+    input: curlConfig(url)
+  }
 }
 
 function shellQuote(value) {
@@ -89,8 +93,7 @@ if (typeof module !== "undefined") {
     resolvePrograms: resolvePrograms,
     missingProgram: missingProgram,
     environment: environment,
-    statusCommand: statusCommand,
-    engineCommand: engineCommand,
-    curlConfig: curlConfig
+    statusCall: statusCall,
+    engineCommand: engineCommand
   }
 }
