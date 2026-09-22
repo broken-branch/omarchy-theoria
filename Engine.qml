@@ -1,6 +1,8 @@
 import QtQuick
+import QtCore
 import Quickshell
 import Quickshell.Io
+import "spawn.js" as Spawn
 import "status.js" as Status
 
 Item {
@@ -20,6 +22,23 @@ Item {
 
   readonly property string home: Quickshell.env("HOME") || ""
   readonly property string discoveryPath: home + "/.local/share/theoria/server.json"
+  readonly property var inheritedEnvironment: ({
+    HOME: home,
+    XDG_RUNTIME_DIR: Quickshell.env("XDG_RUNTIME_DIR") || "",
+    WAYLAND_DISPLAY: Quickshell.env("WAYLAND_DISPLAY") || "",
+    DISPLAY: Quickshell.env("DISPLAY") || ""
+  })
+  readonly property var programs: Spawn.resolvePrograms(Quickshell.env("PATH") || "", function(candidate) {
+    return String(StandardPaths.findExecutable(candidate, [])) !== ""
+  })
+  readonly property string missingProgram: Spawn.missingProgram(programs)
+
+  Component.onCompleted: {
+    if (missingProgram !== "") {
+      startupError = "Missing program: " + missingProgram
+      unavailable()
+    }
+  }
 
   function unavailable() {
     live = false
@@ -40,8 +59,10 @@ Item {
 
   function probe() {
     var url = Status.statusUrl(serverUrl)
-    if (url === "" || statusProcess.running) return
-    statusProcess.command = ["curl", "-sf", "--max-time", "2", url]
+    if (url === "" || statusProcess.running || missingProgram !== "") return
+    statusProcess.input = Spawn.curlConfig(url)
+    statusProcess.stdinEnabled = true
+    statusProcess.command = Spawn.statusCommand(programs.curl)
     statusProcess.running = true
   }
 
@@ -84,12 +105,16 @@ Item {
   }
 
   function startEngine() {
+    if (missingProgram !== "") {
+      startupError = "Missing program: " + missingProgram
+      unavailable()
+      return
+    }
     if (starting || startProcess.running) return
     starting = true
     startupError = ""
-    // Redirect before detaching: the engine must not inherit Process's pipes,
-    // which disappear when this QML object or the shell is reloaded.
-    startProcess.command = ["sh", "-c", "exec setsid -f env THEORIA_NO_BROWSER=1 theoria open >/dev/null 2>&1"]
+    // The redirect keeps the detached engine independent of this Process's pipes.
+    startProcess.command = Spawn.engineCommand(programs)
     startProcess.running = true
     discoveryRetry.start()
     startupTimeout.restart()
@@ -97,12 +122,17 @@ Item {
 
   function launchPending() {
     if (!live || !pendingOpen || launchProcess.running) return
+    if (missingProgram !== "") {
+      startupError = "Missing program: " + missingProgram
+      unavailable()
+      return
+    }
     var url = pendingBrief !== "" ? Status.withBrief(serverUrl, pendingBrief)
       : pendingRunId === "" ? serverUrl : Status.runUrl(serverUrl, pendingRunId)
     pendingOpen = false
     pendingRunId = ""
     pendingBrief = ""
-    launchProcess.command = ["omarchy-launch-webapp", url]
+    launchProcess.command = [programs.launcher, url]
     launchProcess.running = true
   }
 
@@ -121,15 +151,34 @@ Item {
 
   Process {
     id: statusProcess
+    property string input: ""
     running: false
+    clearEnvironment: true
+    environment: Spawn.environment("status", root.inheritedEnvironment)
+    stdinEnabled: true
+    onStarted: {
+      write(input)
+      input = ""
+      stdinEnabled = false
+    }
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.acceptStatus(text)
     }
   }
 
-  Process { id: startProcess; running: false }
-  Process { id: launchProcess; running: false }
+  Process {
+    id: startProcess
+    running: false
+    clearEnvironment: true
+    environment: Spawn.environment("engine", root.inheritedEnvironment)
+  }
+  Process {
+    id: launchProcess
+    running: false
+    clearEnvironment: true
+    environment: Spawn.environment("launcher", root.inheritedEnvironment)
+  }
 
   Timer {
     id: pollTimer

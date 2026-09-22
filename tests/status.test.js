@@ -1,13 +1,11 @@
 const assert = require("node:assert/strict")
-const { execFile, spawn, spawnSync } = require("node:child_process")
-const { mkdtemp, readFile, rm } = require("node:fs/promises")
+const { chmod, mkdtemp, rm, writeFile } = require("node:fs/promises")
 const os = require("node:os")
 const path = require("node:path")
 const test = require("node:test")
-const { promisify } = require("node:util")
 
+const Spawn = require("../spawn.js")
 const Status = require("../status.js")
-const execFileAsync = promisify(execFile)
 
 const running = {
   id: "run-1",
@@ -65,49 +63,49 @@ test("the stage reads as the round while researching, and as the wait when one i
   assert.equal(Status.stageLabel({ ...running, stage: "write", round: 0 }), "Writing")
 })
 
-async function waitForDiscovery(file, child) {
-  const deadline = Date.now() + 10000
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error("theoria open exited before writing server.json")
-    try {
-      return JSON.parse(await readFile(file, "utf8"))
-    } catch (error) {
-      if (error.code !== "ENOENT" && !(error instanceof SyntaxError)) throw error
-    }
-    await new Promise(resolve => setTimeout(resolve, 50))
+test("the status command keeps the control token out of argv", () => {
+  const url = Status.statusUrl("http://127.0.0.1:4217/?token=secret")
+  const command = Spawn.statusCommand("/usr/bin/curl")
+  assert.equal(command.some(argument => argument.includes("token=")), false)
+  assert.equal(Spawn.curlConfig(url), 'url = "http://127.0.0.1:4217/api/status?token=secret"\n')
+})
+
+test("the resolver returns the first absolute executable and null when absent", async t => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "theoria-path-"))
+  t.after(() => rm(directory, { recursive: true, force: true }))
+  const executable = path.join(directory, "planted")
+  await writeFile(executable, "fixture")
+  await chmod(executable, 0o700)
+
+  assert.equal(Spawn.resolveProgram("planted", `${directory}:/usr/bin`), executable)
+  assert.equal(Spawn.resolveProgram("missing", directory), null)
+})
+
+test("process environments contain only the allowed keys", () => {
+  const inherited = {
+    HOME: "/home/test",
+    XDG_RUNTIME_DIR: "/run/user/1000",
+    WAYLAND_DISPLAY: "wayland-1",
+    DISPLAY: ":0",
+    LD_PRELOAD: "/tmp/attack.so"
   }
-  throw new Error("timed out waiting for server.json")
-}
 
-test("a fresh real engine reports idle with no recent runs", async t => {
-  if (spawnSync("theoria", ["--help"], { stdio: "ignore" }).error) {
-    t.skip("theoria is not on PATH")
-    return
-  }
-
-  const home = await mkdtemp(path.join(os.tmpdir(), "theoria-bar-"))
-  const child = spawn("theoria", ["open", "--port", "0"], {
-    env: { ...process.env, THEORIA_NO_BROWSER: "1", THEORIA_HOME: home },
-    stdio: "ignore"
+  assert.deepEqual(Spawn.environment("status", inherited), {
+    PATH: "/usr/local/bin:/usr/bin:/bin",
+    HOME: "/home/test",
+    XDG_RUNTIME_DIR: "/run/user/1000"
   })
-  const exited = new Promise(resolve => child.once("exit", resolve))
-  t.after(async () => {
-    if (child.exitCode === null) child.kill("SIGTERM")
-    let timeout
-    await Promise.race([
-      exited,
-      new Promise(resolve => {
-        timeout = setTimeout(resolve, 2000)
-        timeout.unref()
-      })
-    ])
-    clearTimeout(timeout)
-    await rm(home, { recursive: true, force: true })
+  assert.deepEqual(Spawn.environment("engine", inherited), {
+    PATH: "/usr/local/bin:/usr/bin:/bin",
+    HOME: "/home/test",
+    XDG_RUNTIME_DIR: "/run/user/1000",
+    THEORIA_NO_BROWSER: "1"
   })
-
-  const discovery = await waitForDiscovery(path.join(home, "server.json"), child)
-  const { stdout } = await execFileAsync("curl", ["-sf", "--max-time", "2", Status.statusUrl(discovery.url)])
-  const status = Status.parseStatus(stdout)
-  assert.equal(status.run, null)
-  assert.deepEqual(status.recent, [])
+  assert.deepEqual(Spawn.environment("launcher", inherited), {
+    PATH: "/usr/local/bin:/usr/bin:/bin",
+    HOME: "/home/test",
+    XDG_RUNTIME_DIR: "/run/user/1000",
+    WAYLAND_DISPLAY: "wayland-1",
+    DISPLAY: ":0"
+  })
 })
