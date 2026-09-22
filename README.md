@@ -55,8 +55,9 @@ minute while the engine is idle, and not at all when no engine is running.
 
 It watches `~/.local/share/theoria/server.json`, which `theoria open` writes, and reads `GET /api/status` from the
 loopback address and token in that file. It runs three commands: `curl` for the status, `theoria open` to start the
-engine when none is running, and `omarchy-launch-webapp` to open the window. It holds no key, stores nothing and
-sends nothing off the machine.
+engine when none is running, and `omarchy-launch-webapp` to open the window. Each command is resolved to an absolute
+path at startup and run with a minimal environment. It holds no key, stores nothing and sends nothing off the
+machine.
 
 ## Development
 
