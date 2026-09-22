@@ -16,6 +16,7 @@ Item {
   property bool live: false
   property bool starting: false
   property string startupError: ""
+  property string openError: ""
   property string pendingRunId: ""
   property string pendingBrief: ""
   property bool pendingOpen: false
@@ -58,7 +59,7 @@ Item {
   }
 
   function probe() {
-    var url = Status.statusUrl(serverUrl)
+    var url = Status.apiUrl(serverUrl, "/api/status")
     if (url === "" || statusProcess.running || missingProgram !== "") return
     var call = Spawn.statusCall(programs.curl, url)
     statusProcess.input = call.input
@@ -76,8 +77,8 @@ Item {
     }
     status = parsed
     live = true
-    starting = false
     startupError = ""
+    starting = false
     pollTimer.restart()
     discoveryRetry.stop()
     startupTimeout.stop()
@@ -122,18 +123,35 @@ Item {
   }
 
   function launchPending() {
-    if (!live || !pendingOpen || launchProcess.running) return
+    if (!live || !pendingOpen || openProcess.running || launchProcess.running) return
     if (missingProgram !== "") {
       startupError = "Missing program: " + missingProgram
       unavailable()
       return
     }
-    var url = pendingBrief !== "" ? Status.withBrief(serverUrl, pendingBrief)
-      : pendingRunId === "" ? serverUrl : Status.runUrl(serverUrl, pendingRunId)
+    var target = pendingBrief !== "" ? { brief: pendingBrief }
+      : pendingRunId === "" ? {} : { run: pendingRunId }
+    var url = Status.apiUrl(serverUrl, "/api/open")
+    var call = Spawn.openCall(programs.curl, url, target)
+    openProcess.serverUrl = serverUrl
+    openProcess.input = call.input
+    openProcess.stdinEnabled = true
+    openProcess.command = call.command
+    openProcess.running = true
+  }
+
+  function acceptOpen(output, requestedServerUrl) {
+    var url = Status.openUrl(String(output || ""), requestedServerUrl)
+    var command = Spawn.launchCommand(programs.launcher, url)
     pendingOpen = false
     pendingRunId = ""
     pendingBrief = ""
-    launchProcess.command = [programs.launcher, url]
+    if (!command) {
+      openError = "Open needs Theoria 2.2 or newer — npm install -g theoria"
+      return
+    }
+    openError = ""
+    launchProcess.command = command
     launchProcess.running = true
   }
 
@@ -173,6 +191,24 @@ Item {
     running: false
     clearEnvironment: true
     environment: Spawn.environment("engine", root.inheritedEnvironment)
+  }
+  Process {
+    id: openProcess
+    property string input: ""
+    property string serverUrl: ""
+    running: false
+    clearEnvironment: true
+    environment: Spawn.environment("status", root.inheritedEnvironment)
+    stdinEnabled: true
+    onStarted: {
+      write(input)
+      input = ""
+      stdinEnabled = false
+    }
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.acceptOpen(text, openProcess.serverUrl)
+    }
   }
   Process {
     id: launchProcess

@@ -125,20 +125,26 @@ function parseDiscovery(raw) {
   }
 }
 
-function statusUrl(serverUrl) {
+function apiUrl(serverUrl, path) {
   var value = String(serverUrl || "")
   var queryAt = value.indexOf("?")
   if (queryAt < 0) return ""
-  var origin = value.match(/^https?:\/\/[^/]+/)
-  return origin ? origin[0] + "/api/status" + value.slice(queryAt) : ""
+  var origin = value.match(/^https?:\/\/[^/?#]+/)
+  return origin ? origin[0] + String(path || "") + value.slice(queryAt) : ""
 }
 
-function runUrl(serverUrl, runId) {
-  return serverUrl + "&run=" + encodeURIComponent(String(runId || ""))
-}
-
-function withBrief(serverUrl, text) {
-  return serverUrl + "&brief=" + encodeURIComponent(String(text).trim())
+function openUrl(body, serverUrl) {
+  var parsed
+  try {
+    parsed = JSON.parse(String(body || ""))
+  } catch (e) {
+    return ""
+  }
+  if (!parsed || typeof parsed.url !== "string") return ""
+  var origin = String(serverUrl || "").match(/^https?:\/\/[^/?#]+/)
+  if (!origin || parsed.url.indexOf(origin[0]) !== 0) return ""
+  var path = parsed.url.slice(origin[0].length)
+  return /^\/open\/[^/?#]+$/.test(path) ? parsed.url : ""
 }
 
 if (typeof module !== "undefined") {
@@ -157,8 +163,7 @@ if (typeof module !== "undefined") {
     statusLabel: statusLabel,
     formatWhen: formatWhen,
     parseDiscovery: parseDiscovery,
-    statusUrl: statusUrl,
-    runUrl: runUrl,
-    withBrief: withBrief
+    apiUrl: apiUrl,
+    openUrl: openUrl
   }
 }

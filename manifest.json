@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.broken-branch.theoria",
   "name": "Theoria",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "broken-branch",
   "license": "MIT",
   "description": "Watch and drive Theoria from the Omarchy bar: what the current research run is doing, what it has spent, a box to start a new one, and your recent runs. Theoria runs on Claude, ChatGPT, Gemini or a local model.",

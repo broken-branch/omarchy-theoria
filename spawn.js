@@ -70,6 +70,23 @@ function statusCall(curl, url) {
   }
 }
 
+/** The open exchange as one piece: neither its token nor its target can leak into argv. */
+function openCall(curl, url, target) {
+  return {
+    command: [curl, "-sf", "--max-time", "2", "--max-filesize", "100000", "-K", "-"],
+    input: curlConfig(url)
+      + "request = \"POST\"\n"
+      + "header = \"content-type: application/json\"\n"
+      + "data = \"" + curlConfigValue(JSON.stringify(target || {})) + "\"\n"
+  }
+}
+
+function launchCommand(launcher, url) {
+  var value = String(url || "")
+  return value === "" || value.indexOf("?") >= 0 || /token/i.test(value)
+    ? null : [launcher, value]
+}
+
 function shellQuote(value) {
   return "'" + String(value).replace(/'/g, "'\"'\"'") + "'"
 }
@@ -79,10 +96,13 @@ function engineCommand(programs) {
     + shellQuote(programs.theoria) + " open >/dev/null 2>&1"]
 }
 
-function curlConfig(url) {
-  var escaped = String(url || "").replace(/\\/g, "\\\\").replace(/"/g, "\\\"")
+function curlConfigValue(value) {
+  return String(value || "").replace(/\\/g, "\\\\").replace(/"/g, "\\\"")
     .replace(/\r/g, "\\r").replace(/\n/g, "\\n").replace(/\t/g, "\\t")
-  return "url = \"" + escaped + "\"\n"
+}
+
+function curlConfig(url) {
+  return "url = \"" + curlConfigValue(url) + "\"\n"
 }
 
 if (typeof module !== "undefined") {
@@ -94,6 +114,8 @@ if (typeof module !== "undefined") {
     missingProgram: missingProgram,
     environment: environment,
     statusCall: statusCall,
+    openCall: openCall,
+    launchCommand: launchCommand,
     engineCommand: engineCommand
   }
 }

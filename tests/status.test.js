@@ -37,20 +37,6 @@ test("recent rows are newest first and limited to five", () => {
   assert.deepEqual(Status.recentRows(rows).map(row => row.id), ["7", "6", "5", "4", "3"])
 })
 
-test("a brief URL keeps the token and carries the trimmed, encoded brief", () => {
-  assert.equal(
-    Status.withBrief("http://127.0.0.1:4217/?token=secret", "  cost & speed?  "),
-    "http://127.0.0.1:4217/?token=secret&brief=cost%20%26%20speed%3F"
-  )
-})
-
-test("a run URL keeps the token and carries the run id", () => {
-  assert.equal(
-    Status.runUrl("http://127.0.0.1:4217/?token=secret", "run 1"),
-    "http://127.0.0.1:4217/?token=secret&run=run%201"
-  )
-})
-
 test("only a loopback discovery URL with a token is accepted", () => {
   assert.equal(Status.parseDiscovery('{"url":"http://127.0.0.1:4217/?token=secret"}'), "http://127.0.0.1:4217/?token=secret")
   assert.equal(Status.parseDiscovery('{"url":"http://example.com/?token=secret"}'), "")
@@ -64,11 +50,66 @@ test("the stage reads as the round while researching, and as the wait when one i
 })
 
 test("the status command keeps the control token out of argv", () => {
-  const url = Status.statusUrl("http://127.0.0.1:4217/?token=secret")
+  const url = Status.apiUrl("http://127.0.0.1:4217/?token=secret", "/api/status")
   const call = Spawn.statusCall("/usr/bin/curl", url)
   assert.equal(call.command.some(argument => argument.includes("token=")), false)
   assert.equal(call.command.join(" ").includes("secret"), false)
   assert.equal(call.input, 'url = "http://127.0.0.1:4217/api/status?token=secret"\n')
+})
+
+test("an origin-only discovery URL yields the status API URL", () => {
+  assert.equal(
+    Status.apiUrl("http://127.0.0.1:4217?token=secret", "/api/status"),
+    "http://127.0.0.1:4217/api/status?token=secret"
+  )
+})
+
+test("the open call keeps the token out of argv and puts a run in its JSON body", () => {
+  const call = Spawn.openCall(
+    "/usr/bin/curl",
+    Status.apiUrl("http://127.0.0.1:4217/?token=secret", "/api/open"),
+    { run: "run 1" }
+  )
+  assert.equal(call.command.some(argument => argument.includes("token=")), false)
+  assert.equal(call.command.join(" ").includes("secret"), false)
+  assert.deepEqual(call.command, [
+    "/usr/bin/curl", "-sf", "--max-time", "2", "--max-filesize", "100000", "-K", "-"
+  ])
+  assert.equal(call.input,
+    'url = "http://127.0.0.1:4217/api/open?token=secret"\n'
+      + 'request = "POST"\n'
+      + 'header = "content-type: application/json"\n'
+      + 'data = "{\\"run\\":\\"run 1\\"}"\n')
+})
+
+test("the open call puts a brief in its JSON body with curl-config escaping", () => {
+  const call = Spawn.openCall(
+    "/usr/bin/curl",
+    Status.apiUrl("http://127.0.0.1:4217/?token=secret", "/api/open"),
+    { brief: "cost & speed?\nnow" }
+  )
+  assert.equal(call.input.includes('data = "{\\"brief\\":\\"cost & speed?\\\\nnow\\"}"'), true)
+})
+
+test("only a query-free one-time URL on the server origin is accepted", () => {
+  const server = "http://127.0.0.1:4217/?token=secret"
+  const url = "http://127.0.0.1:4217/open/one-time-code"
+  assert.equal(Status.openUrl(JSON.stringify({ url }), server), url)
+  assert.equal(Status.openUrl(JSON.stringify({ url: "http://127.0.0.1:4218/open/code" }), server), "")
+  assert.equal(Status.openUrl(JSON.stringify({ url: `${url}?token=secret` }), server), "")
+  assert.equal(Status.openUrl(JSON.stringify({ url: "http://127.0.0.1:4217/runs/1" }), server), "")
+  assert.equal(Status.openUrl("not json", server), "")
+})
+
+test("the launcher receives only a query-free link without a token", () => {
+  const launcher = "/usr/bin/omarchy-launch-webapp"
+  const url = "http://127.0.0.1:4217/open/one-time-code"
+  const command = Spawn.launchCommand(launcher, url)
+  assert.deepEqual(command, [launcher, url])
+  assert.equal(command.join(" ").includes("token="), false)
+  assert.equal(Spawn.launchCommand(launcher, "http://127.0.0.1:4217/?token=secret"), null)
+  assert.equal(Spawn.launchCommand(launcher, `${url}?next=home`), null)
+  assert.equal(Spawn.launchCommand(launcher, "http://127.0.0.1:4217/open/token-value"), null)
 })
 
 test("the resolver returns the first absolute executable and null when absent", async t => {
