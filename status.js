@@ -133,12 +133,18 @@ function statusUrl(serverUrl) {
   return origin ? origin[0] + "/api/status" + value.slice(queryAt) : ""
 }
 
-function runUrl(serverUrl, runId) {
-  return serverUrl + "&run=" + encodeURIComponent(String(runId || ""))
-}
-
-function withBrief(serverUrl, text) {
-  return serverUrl + "&brief=" + encodeURIComponent(String(text).trim())
+function openUrl(body, serverUrl) {
+  var parsed
+  try {
+    parsed = JSON.parse(String(body || ""))
+  } catch (e) {
+    return ""
+  }
+  if (!parsed || typeof parsed.url !== "string") return ""
+  var origin = String(serverUrl || "").match(/^https?:\/\/[^/?#]+/)
+  if (!origin || parsed.url.indexOf(origin[0]) !== 0) return ""
+  var path = parsed.url.slice(origin[0].length)
+  return /^\/open\/[^/?#]+$/.test(path) ? parsed.url : ""
 }
 
 if (typeof module !== "undefined") {
@@ -158,7 +164,6 @@ if (typeof module !== "undefined") {
     formatWhen: formatWhen,
     parseDiscovery: parseDiscovery,
     statusUrl: statusUrl,
-    runUrl: runUrl,
-    withBrief: withBrief
+    openUrl: openUrl
   }
 }

@@ -122,18 +122,34 @@ Item {
   }
 
   function launchPending() {
-    if (!live || !pendingOpen || launchProcess.running) return
+    if (!live || !pendingOpen || openProcess.running || launchProcess.running) return
     if (missingProgram !== "") {
       startupError = "Missing program: " + missingProgram
       unavailable()
       return
     }
-    var url = pendingBrief !== "" ? Status.withBrief(serverUrl, pendingBrief)
-      : pendingRunId === "" ? serverUrl : Status.runUrl(serverUrl, pendingRunId)
+    var target = pendingBrief !== "" ? { brief: pendingBrief }
+      : pendingRunId === "" ? {} : { run: pendingRunId }
+    var call = Spawn.openCall(programs.curl, serverUrl, target)
+    openProcess.serverUrl = serverUrl
+    openProcess.input = call.input
+    openProcess.stdinEnabled = true
+    openProcess.command = call.command
+    openProcess.running = true
+  }
+
+  function acceptOpen(output, requestedServerUrl) {
+    var url = Status.openUrl(String(output || ""), requestedServerUrl)
+    var command = Spawn.launchCommand(programs.launcher, url)
     pendingOpen = false
     pendingRunId = ""
     pendingBrief = ""
-    launchProcess.command = [programs.launcher, url]
+    if (!command) {
+      startupError = "Open needs Theoria 2.2 or newer — npm install -g theoria"
+      return
+    }
+    startupError = ""
+    launchProcess.command = command
     launchProcess.running = true
   }
 
@@ -173,6 +189,24 @@ Item {
     running: false
     clearEnvironment: true
     environment: Spawn.environment("engine", root.inheritedEnvironment)
+  }
+  Process {
+    id: openProcess
+    property string input: ""
+    property string serverUrl: ""
+    running: false
+    clearEnvironment: true
+    environment: Spawn.environment("status", root.inheritedEnvironment)
+    stdinEnabled: true
+    onStarted: {
+      write(input)
+      input = ""
+      stdinEnabled = false
+    }
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.acceptOpen(text, openProcess.serverUrl)
+    }
   }
   Process {
     id: launchProcess
