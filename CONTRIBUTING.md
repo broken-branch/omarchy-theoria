@@ -38,3 +38,12 @@ renders a report, a plan or a clarify question, it opens the app for those — a
 - `./check` passes before a pull request. A change a user sees updates the README in the same pull request.
 - This repository is cloned onto every user's machine by `omarchy plugin add`: never commit credentials, personal
   data or run output.
+
+## Releasing with a new Theoria
+
+1. Wait until the new Theoria version is published to npm.
+2. Run `gh workflow run bump-engine.yml -f version=X.Y.Z` with the published version. The workflow pushes `bump/theoria-X.Y.Z`.
+3. On that branch, raise `manifest.json`'s `version` to the next plugin version, commit it, and push it so the change is in the same pull request.
+4. Run `gh pr create --head bump/theoria-X.Y.Z` to open the pull request as the maintainer.
+5. Merge when `check` is green.
+6. Once the release is listed, file the marketplace's **Verify and publish a newer upstream commit** request with the new HEAD SHA.

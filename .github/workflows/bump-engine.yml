@@ -1,0 +1,47 @@
+name: bump Theoria engine
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published Theoria version (X.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Validate published version
+        shell: bash
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Expected exact X.Y.Z version" >&2; exit 1; }
+          published=$(npm view "theoria@$VERSION" version)
+          [[ "$published" == "$VERSION" ]] || { echo "Theoria $VERSION is not published" >&2; exit 1; }
+      - name: Update package and lock
+        shell: bash
+        run: |
+          node -e 'const fs = require("node:fs"); const path = "engine/package.json"; const pkg = JSON.parse(fs.readFileSync(path, "utf8")); pkg.dependencies.theoria = process.env.VERSION; fs.writeFileSync(path, JSON.stringify(pkg) + "\n")'
+          cd engine
+          npm install --package-lock-only --ignore-scripts
+      - name: Check
+        run: ./check
+      - name: Commit and push branch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "bump/theoria-$VERSION"
+          git add engine/package.json engine/package-lock.json
+          git commit -m "Bump Theoria to $VERSION"
+          git push origin "bump/theoria-$VERSION"

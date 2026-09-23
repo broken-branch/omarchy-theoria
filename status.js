@@ -2,18 +2,26 @@ function emptyStatus() {
   return { run: null, recent: [] }
 }
 
-var ENGINE_VERSION = "2.2.1"
-
-function isPinnedEngine(raw) {
+function pinnedEngineVersion(raw) {
   try {
-    return JSON.parse(String(raw || "")).version === ENGINE_VERSION
+    return JSON.parse(String(raw || "")).dependencies.theoria || ""
+  } catch (error) {
+    return ""
+  }
+}
+
+function isPinnedEngine(raw, pinnedPackage) {
+  try {
+    var version = pinnedEngineVersion(pinnedPackage)
+    return version !== "" && JSON.parse(String(raw || "")).version === version
   } catch (error) {
     return false
   }
 }
 
-function engineInstallMessage() {
-  return "Theoria " + ENGINE_VERSION + " is not installed — see the plugin's README"
+function engineInstallMessage(pinnedPackage) {
+  var version = pinnedEngineVersion(pinnedPackage)
+  return "Theoria" + (version ? " " + version : "") + " is not installed — see the plugin's README"
 }
 
 /** The status body, or null when it is not one: the caller treats null as "no engine". */
@@ -163,7 +171,7 @@ function openUrl(body, serverUrl) {
 
 if (typeof module !== "undefined") {
   module.exports = {
-    ENGINE_VERSION: ENGINE_VERSION,
+    pinnedEngineVersion: pinnedEngineVersion,
     isPinnedEngine: isPinnedEngine,
     engineInstallMessage: engineInstallMessage,
     emptyStatus: emptyStatus,

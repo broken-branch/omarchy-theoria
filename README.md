@@ -10,7 +10,7 @@ runs, and a button that opens the app window.
 
 - Omarchy with `omarchy-shell` and `omarchy-launch-webapp`
 - Arch's `nodejs` package (Node 24 or newer at `/usr/bin/node`), `npm`, and `curl`
-- Theoria 2.2.1, installed from this plugin's committed lockfile into your home directory:
+- The Theoria version pinned in `engine/package.json`, installed from this plugin's committed lockfile into your home directory:
 
   ```sh
   mkdir -p ~/.local/share/theoria/engine
@@ -70,7 +70,7 @@ It watches `~/.local/share/theoria/server.json`, which the engine writes, and re
 loopback address and token in that file. To open the app, it asks the engine for a one-time link (`POST /api/open`)
 and passes only that link to `omarchy-launch-webapp`; the token never leaves `curl`'s stdin. To start the engine,
 it reads `~/.local/share/theoria/engine/node_modules/theoria/package.json` and runs
-`~/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js` through `node` only when the package is 2.2.1. The engine
+`~/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js` through `node` only when the package matches the Theoria version pinned in `engine/package.json`. The engine
 is detached from the panel. `node`, `curl` and the webapp launcher are resolved from
 `/usr/local/bin:/usr/bin:/bin` and run with a minimal environment. It holds no key, stores nothing and sends
 nothing off the machine.

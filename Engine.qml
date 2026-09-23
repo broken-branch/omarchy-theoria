@@ -21,6 +21,8 @@ Item {
   property string pendingBrief: ""
   property bool pendingOpen: false
   property bool pinnedEngineInstalled: false
+  property string pinnedEnginePackage: ""
+  property string installedEnginePackage: ""
 
   readonly property string home: Quickshell.env("HOME") || ""
   readonly property string discoveryPath: home + "/.local/share/theoria/server.json"
@@ -50,9 +52,10 @@ Item {
   }
 
   function readEnginePackage(content) {
-    pinnedEngineInstalled = Status.isPinnedEngine(content)
-    if (!pinnedEngineInstalled && missingProgram === "") startupError = Status.engineInstallMessage()
-    else if (startupError === Status.engineInstallMessage()) startupError = ""
+    installedEnginePackage = content
+    pinnedEngineInstalled = Status.isPinnedEngine(content, pinnedEnginePackage)
+    if (!pinnedEngineInstalled && missingProgram === "") startupError = Status.engineInstallMessage(pinnedEnginePackage)
+    else if (startupError.indexOf(" is not installed — see the plugin's README") !== -1) startupError = ""
   }
 
   function readDiscovery(content) {
@@ -115,9 +118,10 @@ Item {
   }
 
   function startEngine() {
+    pinnedPackage.reload()
     enginePackage.reload()
     if (!pinnedEngineInstalled) {
-      startupError = Status.engineInstallMessage()
+      startupError = Status.engineInstallMessage(pinnedEnginePackage)
       unavailable()
       return
     }
@@ -160,12 +164,29 @@ Item {
     pendingRunId = ""
     pendingBrief = ""
     if (!command) {
-      openError = Status.engineInstallMessage()
+      openError = Status.engineInstallMessage(pinnedEnginePackage)
       return
     }
     openError = ""
     launchProcess.command = command
     launchProcess.running = true
+  }
+
+  FileView {
+    id: pinnedPackage
+    path: Qt.resolvedUrl("engine/package.json")
+    blockLoading: true
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: {
+      root.pinnedEnginePackage = text()
+      root.readEnginePackage(root.installedEnginePackage)
+    }
+    onLoadFailed: {
+      root.pinnedEnginePackage = ""
+      root.readEnginePackage(root.installedEnginePackage)
+    }
   }
 
   FileView {
