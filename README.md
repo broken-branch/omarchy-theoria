@@ -8,12 +8,25 @@ runs, and a button that opens the app window.
 
 ## Requirements
 
-- Omarchy with `omarchy-shell`, and `omarchy-launch-webapp` on `PATH` (both ship with Omarchy)
-- `curl`
-- Theoria 2.2 or newer, with `theoria` on `PATH`. The plugin reads its loopback server; it is not useful without it.
-  Install it with `npm install -g theoria`, then run `theoria doctor`. Theoria runs on whichever AI you already
-  have — a Claude, ChatGPT or Google subscription, an OpenAI-compatible endpoint such as OpenRouter, or a model
-  running locally under Ollama or llama.cpp.
+- Omarchy with `omarchy-shell` and `omarchy-launch-webapp`
+- Arch's `nodejs` package (Node 24 or newer at `/usr/bin/node`), `npm`, and `curl`
+- Theoria 2.2.1, installed from this plugin's committed lockfile into your home directory:
+
+  ```sh
+  mkdir -p ~/.local/share/theoria/engine
+  cp ~/.config/omarchy/plugins/io.github.broken-branch.theoria/engine/package.json ~/.config/omarchy/plugins/io.github.broken-branch.theoria/engine/package-lock.json ~/.local/share/theoria/engine/
+  npm ci --prefix ~/.local/share/theoria/engine --ignore-scripts
+  ~/.local/share/theoria/engine/node_modules/.bin/theoria doctor
+  ```
+
+  Theoria is MIT licensed; the installed dependency tree is about 290 MB. A shell `theoria` command is optional:
+  you can symlink it to `~/.local/share/theoria/engine/node_modules/.bin/theoria`. The panel always starts the
+  private engine and never runs a `theoria` found on your shell path. Keep `node_modules` outside the plugin folder;
+  Omarchy plugin validation refuses symlinks there. Theoria runs on a Claude, ChatGPT or Google subscription, an
+  OpenAI-compatible endpoint such as OpenRouter, or a local model under Ollama or llama.cpp.
+
+An engine started by the panel has `PATH=/usr/local/bin:/usr/bin:/bin`. The `codex` and `gemini` providers need
+their CLIs in one of those directories; otherwise start Theoria from a shell.
 
 ## Install as an Omarchy plugin
 
@@ -53,11 +66,13 @@ minute while the engine is idle, and not at all when no engine is running.
 
 ## What it reads and runs
 
-It watches `~/.local/share/theoria/server.json`, which `theoria open` writes, and reads `GET /api/status` from the
+It watches `~/.local/share/theoria/server.json`, which the engine writes, and reads `GET /api/status` from the
 loopback address and token in that file. To open the app, it asks the engine for a one-time link (`POST /api/open`)
-and passes only that link to `omarchy-launch-webapp`; the token never leaves `curl`'s stdin. It also runs `theoria open`
-to start the engine when none is running. Each command is resolved to an absolute path at startup and run with a
-minimal environment. It holds no key, stores nothing and sends nothing off the machine.
+and passes only that link to `omarchy-launch-webapp`; the token never leaves `curl`'s stdin. To start the engine,
+it reads the private package's version and runs its CLI entry point through `node` only when it is 2.2.1. The engine
+is detached from the panel. `node`, `curl` and the webapp launcher are resolved from
+`/usr/local/bin:/usr/bin:/bin` and run with a minimal environment. It holds no key, stores nothing and sends
+nothing off the machine.
 
 ## Development
 

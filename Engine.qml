@@ -20,31 +20,32 @@ Item {
   property string pendingRunId: ""
   property string pendingBrief: ""
   property bool pendingOpen: false
+  property bool pinnedEngineInstalled: false
 
   readonly property string home: Quickshell.env("HOME") || ""
   readonly property string discoveryPath: home + "/.local/share/theoria/server.json"
+  readonly property string enginePackagePath: home + "/.local/share/theoria/engine/node_modules/theoria/package.json"
   readonly property var inheritedEnvironment: ({
     HOME: home,
     XDG_RUNTIME_DIR: Quickshell.env("XDG_RUNTIME_DIR") || "",
     WAYLAND_DISPLAY: Quickshell.env("WAYLAND_DISPLAY") || "",
     DISPLAY: Quickshell.env("DISPLAY") || ""
   })
-  readonly property var programs: Spawn.resolvePrograms(Quickshell.env("PATH") || "", function(candidate) {
+  readonly property var programs: Spawn.resolvePrograms(function(candidate) {
     return String(StandardPaths.findExecutable(candidate, [])) !== ""
   })
   readonly property string missingProgram: Spawn.missingProgram(programs)
-
-  Component.onCompleted: {
-    if (missingProgram !== "") {
-      startupError = "Missing program: " + missingProgram
-      unavailable()
-    }
-  }
 
   function unavailable() {
     live = false
     status = Status.emptyStatus()
     pollTimer.stop()
+  }
+
+  function readEnginePackage(content) {
+    pinnedEngineInstalled = Status.isPinnedEngine(content)
+    if (!pinnedEngineInstalled) startupError = Status.engineInstallMessage()
+    else if (startupError === Status.engineInstallMessage()) startupError = ""
   }
 
   function readDiscovery(content) {
@@ -107,6 +108,11 @@ Item {
   }
 
   function startEngine() {
+    if (!pinnedEngineInstalled) {
+      startupError = Status.engineInstallMessage()
+      unavailable()
+      return
+    }
     if (missingProgram !== "") {
       startupError = "Missing program: " + missingProgram
       unavailable()
@@ -115,9 +121,8 @@ Item {
     if (starting || startProcess.running) return
     starting = true
     startupError = ""
-    // The redirect keeps the detached engine independent of this Process's pipes.
-    startProcess.command = Spawn.engineCommand(programs)
-    startProcess.running = true
+    startProcess.command = Spawn.engineCommand(programs.node, home)
+    startProcess.startDetached()
     discoveryRetry.start()
     startupTimeout.restart()
   }
@@ -147,12 +152,22 @@ Item {
     pendingRunId = ""
     pendingBrief = ""
     if (!command) {
-      openError = "Open needs Theoria 2.2 or newer — npm install -g theoria"
+      openError = Status.engineInstallMessage()
       return
     }
     openError = ""
     launchProcess.command = command
     launchProcess.running = true
+  }
+
+  FileView {
+    id: enginePackage
+    path: root.enginePackagePath
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.readEnginePackage(text())
+    onLoadFailed: root.readEnginePackage("")
   }
 
   FileView {
