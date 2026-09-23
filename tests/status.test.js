@@ -147,13 +147,41 @@ test("engine command addresses the private package through node", () => {
   ])
 })
 
-test("the installed engine must match the package pinned by the plugin", () => {
+test("missing engine shows the setup card and README's four commands for the loaded plugin", () => {
+  const pinned = JSON.stringify({ dependencies: { theoria: "7.8.9" } })
+  const card = Status.installCard("", pinned, "file:///home/test/My%20Plugins/theoria/engine/package.json")
+  assert.equal(Status.isPinnedEngine("", pinned), false)
+  assert.deepEqual(card, {
+    title: "Theoria isn't installed",
+    body: "Theoria is the research app this panel drives. Install the version this plugin uses, then open the panel again:",
+    command: "mkdir -p ~/.local/share/theoria/engine\n"
+      + "cp '/home/test/My Plugins/theoria'/engine/package.json '/home/test/My Plugins/theoria'/engine/package-lock.json ~/.local/share/theoria/engine/\n"
+      + "npm ci --prefix ~/.local/share/theoria/engine --ignore-scripts\n"
+      + "~/.local/share/theoria/engine/node_modules/.bin/theoria doctor",
+    copyLabel: "Copy",
+    setupLabel: "Setup steps ↗",
+    setupUrl: "https://github.com/broken-branch/omarchy-theoria#readme"
+  })
+})
+
+test("another installed version names both versions", () => {
+  const pinned = JSON.stringify({ dependencies: { theoria: "7.8.9" } })
+  assert.equal(Status.isPinnedEngine('{"version":"7.8.8"}', pinned), false)
+  assert.equal(Status.installCard('{"version":"7.8.8"}', pinned, "file:///tmp/plugin/engine/package.json").title,
+    "Theoria 7.8.8 is installed; this plugin uses 7.8.9")
+})
+
+test("the pinned installed version removes the card", () => {
   const pinned = JSON.stringify({ dependencies: { theoria: "7.8.9" } })
   assert.equal(Status.isPinnedEngine('{"version":"7.8.9"}', pinned), true)
-  assert.equal(Status.isPinnedEngine('{"version":"7.8.8"}', pinned), false)
-  assert.equal(Status.isPinnedEngine("", pinned), false)
+  assert.equal(Status.installCard('{"version":"7.8.9"}', pinned, "file:///tmp/plugin/engine/package.json"), null)
+})
+
+test("an unreadable installed package is treated as missing", () => {
+  const pinned = JSON.stringify({ dependencies: { theoria: "7.8.9" } })
+  assert.equal(Status.installCard("not json", pinned, "file:///tmp/plugin/engine/package.json").title,
+    "Theoria isn't installed")
   assert.equal(Status.isPinnedEngine('{"version":"7.8.9"}', ""), false)
-  assert.equal(Status.engineInstallMessage(pinned), "Theoria 7.8.9 is not installed — see the plugin's README")
 })
 
 test("process environments contain only the allowed keys", () => {

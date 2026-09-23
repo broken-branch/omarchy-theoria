@@ -133,17 +133,27 @@ Panel {
           }
 
           Text {
-            visible: !engine.live || engine.openError !== ""
+            visible: !engine.installCard && (!engine.live || engine.openError !== "")
             width: parent.width
-            text: engine.startupError || engine.openError || "Theoria is not running"
+            text: engine.startupError || engine.openError || Status.notRunningMessage()
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.body
             horizontalAlignment: Text.AlignHCenter
           }
 
+          InstallCard {
+            visible: !!engine.installCard
+            width: parent.width
+            card: engine.installCard
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            onCopyRequested: Quickshell.clipboardText = card.command
+            onSetupRequested: engine.openSetupSteps()
+          }
+
           RunCard {
-            visible: engine.live && !!root.run
+            visible: !engine.installCard && engine.live && !!root.run
             width: parent.width
             run: root.run
             foreground: root.foreground
@@ -151,6 +161,7 @@ Panel {
           }
 
           Column {
+            visible: !engine.installCard
             width: parent.width
             spacing: Style.space(6)
 
@@ -191,12 +202,12 @@ Panel {
           }
 
           PanelSeparator {
-            visible: engine.live
+            visible: !engine.installCard && engine.live
             foreground: root.foreground
           }
 
           Column {
-            visible: engine.live
+            visible: !engine.installCard && engine.live
             width: parent.width
             spacing: Style.space(8)
 
@@ -229,6 +240,7 @@ Panel {
           }
 
           Button {
+            visible: !engine.installCard
             width: parent.width
             text: engine.starting ? "Starting Theoria…" : "Open Theoria"
             bordered: true

@@ -19,9 +19,44 @@ function isPinnedEngine(raw, pinnedPackage) {
   }
 }
 
-function engineInstallMessage(pinnedPackage) {
-  var version = pinnedEngineVersion(pinnedPackage)
-  return "Theoria" + (version ? " " + version : "") + " is not installed — see the plugin's README"
+function installedEngineVersion(raw) {
+  try {
+    return JSON.parse(String(raw || "")).version || ""
+  } catch (error) {
+    return ""
+  }
+}
+
+function shellQuote(value) {
+  return "'" + String(value).replace(/'/g, "'\\''") + "'"
+}
+
+function installCommand(pluginPackageUrl) {
+  var match = String(pluginPackageUrl || "").match(/^file:\/\/(\/.*)\/engine\/package\.json$/)
+  if (!match) return ""
+  var pluginFolder = shellQuote(decodeURIComponent(match[1]))
+  return "mkdir -p ~/.local/share/theoria/engine\n"
+    + "cp " + pluginFolder + "/engine/package.json " + pluginFolder + "/engine/package-lock.json ~/.local/share/theoria/engine/\n"
+    + "npm ci --prefix ~/.local/share/theoria/engine --ignore-scripts\n"
+    + "~/.local/share/theoria/engine/node_modules/.bin/theoria doctor"
+}
+
+function installCard(installedPackage, pinnedPackage, pluginPackageUrl) {
+  if (isPinnedEngine(installedPackage, pinnedPackage)) return null
+  var installed = installedEngineVersion(installedPackage)
+  var pinned = pinnedEngineVersion(pinnedPackage)
+  return {
+    title: installed ? "Theoria " + installed + " is installed; this plugin uses " + pinned : "Theoria isn't installed",
+    body: "Theoria is the research app this panel drives. Install the version this plugin uses, then open the panel again:",
+    command: installCommand(pluginPackageUrl),
+    copyLabel: "Copy",
+    setupLabel: "Setup steps ↗",
+    setupUrl: "https://github.com/broken-branch/omarchy-theoria#readme"
+  }
+}
+
+function notRunningMessage() {
+  return "Theoria is not running"
 }
 
 function unexpectedOpenLinkMessage() {
@@ -176,7 +211,8 @@ function openUrl(body, serverUrl) {
 if (typeof module !== "undefined") {
   module.exports = {
     isPinnedEngine: isPinnedEngine,
-    engineInstallMessage: engineInstallMessage,
+    installCard: installCard,
+    notRunningMessage: notRunningMessage,
     unexpectedOpenLinkMessage: unexpectedOpenLinkMessage,
     emptyStatus: emptyStatus,
     parseStatus: parseStatus,

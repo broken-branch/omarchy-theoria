@@ -16,7 +16,7 @@ Item {
   property bool live: false
   property bool starting: false
   property string startupError: ""
-  property string installMessage: ""
+  property var installCard: null
   property string openError: ""
   property string pendingRunId: ""
   property string pendingBrief: ""
@@ -53,10 +53,8 @@ Item {
 
   function readEnginePackage(content) {
     pinnedEngineInstalled = Status.isPinnedEngine(content, pinnedEnginePackage)
-    if (!pinnedEngineInstalled && missingProgram === "") {
-      installMessage = Status.engineInstallMessage(pinnedEnginePackage)
-      startupError = installMessage
-    } else if (startupError === installMessage) startupError = ""
+    installCard = Status.installCard(content, pinnedEnginePackage, Qt.resolvedUrl("engine/package.json"))
+    if (!pinnedEngineInstalled) unavailable()
   }
 
   function readDiscovery(content) {
@@ -122,8 +120,6 @@ Item {
     pinnedPackage.reload()
     enginePackage.reload()
     if (!pinnedEngineInstalled) {
-      installMessage = Status.engineInstallMessage(pinnedEnginePackage)
-      startupError = installMessage
       unavailable()
       return
     }
@@ -171,6 +167,12 @@ Item {
     }
     openError = ""
     launchProcess.command = command
+    launchProcess.running = true
+  }
+
+  function openSetupSteps() {
+    if (!programs.launcher || !installCard) return
+    launchProcess.command = [programs.launcher, installCard.setupUrl]
     launchProcess.running = true
   }
 
