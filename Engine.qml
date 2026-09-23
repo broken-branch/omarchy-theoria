@@ -16,13 +16,13 @@ Item {
   property bool live: false
   property bool starting: false
   property string startupError: ""
+  property string installMessage: ""
   property string openError: ""
   property string pendingRunId: ""
   property string pendingBrief: ""
   property bool pendingOpen: false
   property bool pinnedEngineInstalled: false
   property string pinnedEnginePackage: ""
-  property string installedEnginePackage: ""
 
   readonly property string home: Quickshell.env("HOME") || ""
   readonly property string discoveryPath: home + "/.local/share/theoria/server.json"
@@ -52,10 +52,11 @@ Item {
   }
 
   function readEnginePackage(content) {
-    installedEnginePackage = content
     pinnedEngineInstalled = Status.isPinnedEngine(content, pinnedEnginePackage)
-    if (!pinnedEngineInstalled && missingProgram === "") startupError = Status.engineInstallMessage(pinnedEnginePackage)
-    else if (startupError.indexOf(" is not installed — see the plugin's README") !== -1) startupError = ""
+    if (!pinnedEngineInstalled && missingProgram === "") {
+      installMessage = Status.engineInstallMessage(pinnedEnginePackage)
+      startupError = installMessage
+    } else if (startupError === installMessage) startupError = ""
   }
 
   function readDiscovery(content) {
@@ -121,7 +122,8 @@ Item {
     pinnedPackage.reload()
     enginePackage.reload()
     if (!pinnedEngineInstalled) {
-      startupError = Status.engineInstallMessage(pinnedEnginePackage)
+      installMessage = Status.engineInstallMessage(pinnedEnginePackage)
+      startupError = installMessage
       unavailable()
       return
     }
@@ -164,7 +166,7 @@ Item {
     pendingRunId = ""
     pendingBrief = ""
     if (!command) {
-      openError = Status.engineInstallMessage(pinnedEnginePackage)
+      openError = Status.unexpectedOpenLinkMessage()
       return
     }
     openError = ""
@@ -181,11 +183,11 @@ Item {
     onFileChanged: reload()
     onLoaded: {
       root.pinnedEnginePackage = text()
-      root.readEnginePackage(root.installedEnginePackage)
+      enginePackage.reload()
     }
     onLoadFailed: {
       root.pinnedEnginePackage = ""
-      root.readEnginePackage(root.installedEnginePackage)
+      enginePackage.reload()
     }
   }
 

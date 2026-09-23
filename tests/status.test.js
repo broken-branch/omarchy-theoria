@@ -101,6 +101,10 @@ test("only a query-free one-time URL on the server origin is accepted", () => {
   assert.equal(Status.openUrl("not json", server), "")
 })
 
+test("an unexpected open link reports a link error", () => {
+  assert.equal(Status.unexpectedOpenLinkMessage(), "Theoria returned an unexpected link")
+})
+
 test("the launcher receives only a query-free link without a token", () => {
   const launcher = "/usr/bin/omarchy-launch-webapp"
   const url = "http://127.0.0.1:4217/open/one-time-code"

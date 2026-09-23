@@ -24,6 +24,10 @@ function engineInstallMessage(pinnedPackage) {
   return "Theoria" + (version ? " " + version : "") + " is not installed — see the plugin's README"
 }
 
+function unexpectedOpenLinkMessage() {
+  return "Theoria returned an unexpected link"
+}
+
 /** The status body, or null when it is not one: the caller treats null as "no engine". */
 function parseStatus(raw) {
   var parsed
@@ -171,9 +175,9 @@ function openUrl(body, serverUrl) {
 
 if (typeof module !== "undefined") {
   module.exports = {
-    pinnedEngineVersion: pinnedEngineVersion,
     isPinnedEngine: isPinnedEngine,
     engineInstallMessage: engineInstallMessage,
+    unexpectedOpenLinkMessage: unexpectedOpenLinkMessage,
     emptyStatus: emptyStatus,
     parseStatus: parseStatus,
     firstLine: firstLine,
