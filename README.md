@@ -55,7 +55,10 @@ or **Needs you** when the run is waiting for an answer. Click the icon for the p
 
 The panel shows the current run's brief, stage, budget meter, estimated spend and elapsed time; a brief box that
 opens Theoria's New run screen with your text filled in; the five most recent runs, each opening its own screen;
-and **Open Theoria**. When no server is running, the panel says so and Open starts one.
+and **Open Theoria**. When no server is running, the panel says so and Open starts one. If the pinned
+Theoria version is missing or another version is installed, the panel shows setup commands for this plugin's
+location, a **Copy** button, and a link to the setup steps. It returns to the normal view after the pinned
+version is installed.
 
 Theoria runs one thing at a time, so the brief box is disabled while a run is going.
 
