@@ -71,12 +71,14 @@ minute while the engine is idle, and not at all when no engine is running.
 
 It watches `~/.local/share/theoria/server.json`, which the engine writes, and reads `GET /api/status` from the
 loopback address and token in that file. To open the app, it asks the engine for a one-time link (`POST /api/open`)
-and passes only that link to `omarchy-launch-webapp`; the token never leaves `curl`'s stdin. To start the engine,
+and passes that link to `omarchy-launch-webapp`; the token reaches `curl` on stdin, not in process arguments.
+**Setup steps** opens this plugin's [GitHub README](https://github.com/broken-branch/omarchy-theoria#readme)
+through the same launcher. To start the engine,
 it reads `~/.local/share/theoria/engine/node_modules/theoria/package.json` and runs
 `~/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js` through `node` only when the package matches the Theoria version pinned in `engine/package.json`. The engine
 is detached from the panel. `node`, `curl` and the webapp launcher are resolved from
 `/usr/local/bin:/usr/bin:/bin` and run with a minimal environment. It holds no key, stores nothing and sends
-nothing off the machine.
+its status and open API requests only to the loopback engine. Opening Setup steps visits GitHub in the browser.
 
 ## Development
 
