@@ -123,6 +123,30 @@ test("the resolver returns the first absolute executable and null when absent", 
   assert.equal(Spawn.resolveProgram("missing", directory), null)
 })
 
+test("a planted executable on the user's PATH is ignored", async t => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "theoria-path-"))
+  t.after(() => rm(directory, { recursive: true, force: true }))
+  const planted = path.join(directory, "curl")
+  await writeFile(planted, "fixture")
+  await chmod(planted, 0o700)
+  const originalPath = process.env.PATH
+  process.env.PATH = `${directory}:/usr/bin`
+  t.after(() => { process.env.PATH = originalPath })
+  const programs = Spawn.resolvePrograms(candidate => candidate === planted || candidate === "/usr/bin/curl")
+  assert.equal(programs.curl, "/usr/bin/curl")
+  assert.equal(programs.node, null)
+})
+
+test("engine command addresses the private package through node", () => {
+  assert.deepEqual(Spawn.engineCommand("/usr/bin/node", "/home/test"), [
+    "/usr/bin/node", "/home/test/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js", "open"
+  ])
+  assert.equal(Status.isPinnedEngine('{"version":"2.2.1"}'), true)
+  assert.equal(Status.isPinnedEngine('{"version":"2.2.2"}'), false)
+  assert.equal(Status.isPinnedEngine(""), false)
+  assert.equal(Status.engineInstallMessage(), "Theoria 2.2.1 is not installed — see the plugin's README")
+})
+
 test("process environments contain only the allowed keys", () => {
   const inherited = {
     HOME: "/home/test",

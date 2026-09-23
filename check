@@ -4,9 +4,11 @@
 set -eu
 cd "$(dirname "$0")"
 
-for file in README.md LICENSE manifest.json preview.png Panel.qml Engine.qml status.js; do
+for file in README.md LICENSE manifest.json preview.png Panel.qml Engine.qml status.js engine/package.json engine/package-lock.json; do
 	[ -f "$file" ] || { printf 'check: missing %s\n' "$file" >&2; exit 1; }
 done
+
+node -e 'const fs = require("node:fs"); const version = require("./status.js").ENGINE_VERSION; const manifest = require("./engine/package.json"); const lock = require("./engine/package-lock.json"); const readme = fs.readFileSync("README.md", "utf8"); if (manifest.dependencies.theoria !== version || lock.packages["node_modules/theoria"].version !== version || !readme.includes("Theoria " + version)) { console.error("check: engine version differs between status.js, package files, and README.md"); process.exit(1) }'
 
 jq -e '.schemaVersion == 1
 	and .id == "io.github.broken-branch.theoria"

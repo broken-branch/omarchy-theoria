@@ -2,6 +2,20 @@ function emptyStatus() {
   return { run: null, recent: [] }
 }
 
+var ENGINE_VERSION = "2.2.1"
+
+function isPinnedEngine(raw) {
+  try {
+    return JSON.parse(String(raw || "")).version === ENGINE_VERSION
+  } catch (error) {
+    return false
+  }
+}
+
+function engineInstallMessage() {
+  return "Theoria " + ENGINE_VERSION + " is not installed — see the plugin's README"
+}
+
 /** The status body, or null when it is not one: the caller treats null as "no engine". */
 function parseStatus(raw) {
   var parsed
@@ -149,6 +163,9 @@ function openUrl(body, serverUrl) {
 
 if (typeof module !== "undefined") {
   module.exports = {
+    ENGINE_VERSION: ENGINE_VERSION,
+    isPinnedEngine: isPinnedEngine,
+    engineInstallMessage: engineInstallMessage,
     emptyStatus: emptyStatus,
     parseStatus: parseStatus,
     firstLine: firstLine,

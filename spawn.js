@@ -27,18 +27,16 @@ function resolveProgram(program, pathValue, isExecutable) {
   return null
 }
 
-function resolvePrograms(pathValue, isExecutable) {
+function resolvePrograms(isExecutable) {
   return {
-    curl: resolveProgram("curl", pathValue, isExecutable),
-    sh: resolveProgram("sh", pathValue, isExecutable),
-    setsid: resolveProgram("setsid", pathValue, isExecutable),
-    theoria: resolveProgram("theoria", pathValue, isExecutable),
-    launcher: resolveProgram("omarchy-launch-webapp", pathValue, isExecutable)
+    node: resolveProgram("node", FIXED_PATH, isExecutable),
+    curl: resolveProgram("curl", FIXED_PATH, isExecutable),
+    launcher: resolveProgram("omarchy-launch-webapp", FIXED_PATH, isExecutable)
   }
 }
 
 function missingProgram(programs) {
-  var names = ["curl", "sh", "setsid", "theoria", "launcher"]
+  var names = ["node", "curl", "launcher"]
   for (var index = 0; index < names.length; index += 1) {
     if (!programs[names[index]]) {
       return names[index] === "launcher" ? "omarchy-launch-webapp" : names[index]
@@ -87,13 +85,8 @@ function launchCommand(launcher, url) {
     ? null : [launcher, value]
 }
 
-function shellQuote(value) {
-  return "'" + String(value).replace(/'/g, "'\"'\"'") + "'"
-}
-
-function engineCommand(programs) {
-  return [programs.sh, "-c", "exec " + shellQuote(programs.setsid) + " -f "
-    + shellQuote(programs.theoria) + " open >/dev/null 2>&1"]
+function engineCommand(node, home) {
+  return [node, String(home) + "/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js", "open"]
 }
 
 function curlConfigValue(value) {
