@@ -36,6 +36,13 @@ Item {
   })
   readonly property string missingProgram: Spawn.missingProgram(programs)
 
+  Component.onCompleted: {
+    if (missingProgram !== "") {
+      startupError = "Missing program: " + missingProgram
+      unavailable()
+    }
+  }
+
   function unavailable() {
     live = false
     status = Status.emptyStatus()
@@ -44,7 +51,7 @@ Item {
 
   function readEnginePackage(content) {
     pinnedEngineInstalled = Status.isPinnedEngine(content)
-    if (!pinnedEngineInstalled) startupError = Status.engineInstallMessage()
+    if (!pinnedEngineInstalled && missingProgram === "") startupError = Status.engineInstallMessage()
     else if (startupError === Status.engineInstallMessage()) startupError = ""
   }
 
@@ -108,6 +115,7 @@ Item {
   }
 
   function startEngine() {
+    enginePackage.reload()
     if (!pinnedEngineInstalled) {
       startupError = Status.engineInstallMessage()
       unavailable()
@@ -118,7 +126,7 @@ Item {
       unavailable()
       return
     }
-    if (starting || startProcess.running) return
+    if (starting) return
     starting = true
     startupError = ""
     startProcess.command = Spawn.engineCommand(programs.node, home)
@@ -163,6 +171,7 @@ Item {
   FileView {
     id: enginePackage
     path: root.enginePackagePath
+    blockLoading: true
     watchChanges: true
     printErrors: false
     onFileChanged: reload()

@@ -69,7 +69,8 @@ minute while the engine is idle, and not at all when no engine is running.
 It watches `~/.local/share/theoria/server.json`, which the engine writes, and reads `GET /api/status` from the
 loopback address and token in that file. To open the app, it asks the engine for a one-time link (`POST /api/open`)
 and passes only that link to `omarchy-launch-webapp`; the token never leaves `curl`'s stdin. To start the engine,
-it reads the private package's version and runs its CLI entry point through `node` only when it is 2.2.1. The engine
+it reads `~/.local/share/theoria/engine/node_modules/theoria/package.json` and runs
+`~/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js` through `node` only when the package is 2.2.1. The engine
 is detached from the panel. `node`, `curl` and the webapp launcher are resolved from
 `/usr/local/bin:/usr/bin:/bin` and run with a minimal environment. It holds no key, stores nothing and sends
 nothing off the machine.
