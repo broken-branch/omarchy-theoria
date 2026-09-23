@@ -16,11 +16,13 @@ Item {
   property bool live: false
   property bool starting: false
   property string startupError: ""
+  property string installMessage: ""
   property string openError: ""
   property string pendingRunId: ""
   property string pendingBrief: ""
   property bool pendingOpen: false
   property bool pinnedEngineInstalled: false
+  property string pinnedEnginePackage: ""
 
   readonly property string home: Quickshell.env("HOME") || ""
   readonly property string discoveryPath: home + "/.local/share/theoria/server.json"
@@ -50,9 +52,11 @@ Item {
   }
 
   function readEnginePackage(content) {
-    pinnedEngineInstalled = Status.isPinnedEngine(content)
-    if (!pinnedEngineInstalled && missingProgram === "") startupError = Status.engineInstallMessage()
-    else if (startupError === Status.engineInstallMessage()) startupError = ""
+    pinnedEngineInstalled = Status.isPinnedEngine(content, pinnedEnginePackage)
+    if (!pinnedEngineInstalled && missingProgram === "") {
+      installMessage = Status.engineInstallMessage(pinnedEnginePackage)
+      startupError = installMessage
+    } else if (startupError === installMessage) startupError = ""
   }
 
   function readDiscovery(content) {
@@ -115,9 +119,11 @@ Item {
   }
 
   function startEngine() {
+    pinnedPackage.reload()
     enginePackage.reload()
     if (!pinnedEngineInstalled) {
-      startupError = Status.engineInstallMessage()
+      installMessage = Status.engineInstallMessage(pinnedEnginePackage)
+      startupError = installMessage
       unavailable()
       return
     }
@@ -160,12 +166,29 @@ Item {
     pendingRunId = ""
     pendingBrief = ""
     if (!command) {
-      openError = Status.engineInstallMessage()
+      openError = Status.unexpectedOpenLinkMessage()
       return
     }
     openError = ""
     launchProcess.command = command
     launchProcess.running = true
+  }
+
+  FileView {
+    id: pinnedPackage
+    path: Qt.resolvedUrl("engine/package.json")
+    blockLoading: true
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: {
+      root.pinnedEnginePackage = text()
+      enginePackage.reload()
+    }
+    onLoadFailed: {
+      root.pinnedEnginePackage = ""
+      enginePackage.reload()
+    }
   }
 
   FileView {

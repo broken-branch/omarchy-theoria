@@ -101,6 +101,10 @@ test("only a query-free one-time URL on the server origin is accepted", () => {
   assert.equal(Status.openUrl("not json", server), "")
 })
 
+test("an unexpected open link reports a link error", () => {
+  assert.equal(Status.unexpectedOpenLinkMessage(), "Theoria returned an unexpected link")
+})
+
 test("the launcher receives only a query-free link without a token", () => {
   const launcher = "/usr/bin/omarchy-launch-webapp"
   const url = "http://127.0.0.1:4217/open/one-time-code"
@@ -141,10 +145,15 @@ test("engine command addresses the private package through node", () => {
   assert.deepEqual(Spawn.engineCommand("/usr/bin/node", "/home/test"), [
     "/usr/bin/node", "/home/test/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js", "open"
   ])
-  assert.equal(Status.isPinnedEngine('{"version":"2.2.1"}'), true)
-  assert.equal(Status.isPinnedEngine('{"version":"2.2.2"}'), false)
-  assert.equal(Status.isPinnedEngine(""), false)
-  assert.equal(Status.engineInstallMessage(), "Theoria 2.2.1 is not installed — see the plugin's README")
+})
+
+test("the installed engine must match the package pinned by the plugin", () => {
+  const pinned = JSON.stringify({ dependencies: { theoria: "7.8.9" } })
+  assert.equal(Status.isPinnedEngine('{"version":"7.8.9"}', pinned), true)
+  assert.equal(Status.isPinnedEngine('{"version":"7.8.8"}', pinned), false)
+  assert.equal(Status.isPinnedEngine("", pinned), false)
+  assert.equal(Status.isPinnedEngine('{"version":"7.8.9"}', ""), false)
+  assert.equal(Status.engineInstallMessage(pinned), "Theoria 7.8.9 is not installed — see the plugin's README")
 })
 
 test("process environments contain only the allowed keys", () => {
