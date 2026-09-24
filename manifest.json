@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.broken-branch.theoria",
   "name": "Theoria",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "author": "broken-branch",
   "license": "MIT",
   "description": "Theoria researches a question or a decision on its own and hands back a cited, checked report. It runs on Claude, ChatGPT, Gemini, OpenRouter or a local model. This plugin puts it in your Omarchy bar: the current run's stage and spend, a box to start a new run, and your recent runs. Theoria itself is installed separately (see the README).",
