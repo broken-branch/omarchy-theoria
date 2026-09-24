@@ -34,6 +34,7 @@ Panel {
     id: engine
     panelOpen: root.opened
     refreshIntervalSec: Math.max(2, Number(root.setting("refreshIntervalSec", 5)) || 5)
+    onBriefAccepted: briefField.clear()
   }
 
   WidgetButton {
@@ -174,9 +175,10 @@ Panel {
                 width: parent.width - startButton.width - parent.spacing
                 enabled: !root.run
                 placeholderText: "What do you want to know or decide?"
+                maximumLength: 4000
                 foreground: root.foreground
                 font.family: root.fontFamily
-                onAccepted: if (engine.startBrief(text)) clear()
+                onAccepted: engine.startBrief(text)
               }
 
               Button {
@@ -186,7 +188,7 @@ Panel {
                 bordered: true
                 foreground: root.foreground
                 fontFamily: root.fontFamily
-                onClicked: if (engine.startBrief(briefField.text)) briefField.clear()
+                onClicked: engine.startBrief(briefField.text)
               }
             }
 

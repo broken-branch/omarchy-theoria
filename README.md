@@ -35,7 +35,17 @@ of Theoria's code.
 
 ## Set up
 
-1. **Install Theoria.** The plugin runs one exact, reviewed version of Theoria, installed from this plugin's lockfile
+1. **Add the plugin.** Omarchy needs `omarchy-shell` and `omarchy-launch-webapp`.
+
+   ```sh
+   omarchy plugin add https://github.com/broken-branch/omarchy-theoria.git
+   omarchy plugin enable io.github.broken-branch.theoria
+   ```
+
+   A plugin lands disabled so you can read its code before enabling it. Put the widget where you want it with
+   `omarchy bar move io.github.broken-branch.theoria`.
+
+2. **Install Theoria.** The plugin runs one exact, reviewed version of Theoria, installed from this plugin's lockfile
    into your home directory. It needs Arch's `nodejs` (Node 24 or newer), `npm` and `curl`, and takes about 290 MB.
 
    ```sh
@@ -47,18 +57,8 @@ of Theoria's code.
 
    `theoria doctor` prints `ok:` or `fix:` for each requirement.
 
-2. **Choose your AI.** Open Theoria and pick your vendor and model under **Settings**. The default is Claude through
+3. **Choose your AI.** Open Theoria and pick your vendor and model under **Settings**. The default is Claude through
    Claude Code (`claude auth login`).
-
-3. **Add the plugin.** Omarchy needs `omarchy-shell` and `omarchy-launch-webapp`.
-
-   ```sh
-   omarchy plugin add https://github.com/broken-branch/omarchy-theoria.git
-   omarchy plugin enable io.github.broken-branch.theoria
-   ```
-
-   A plugin lands disabled so you can read its code before enabling it. Put the widget where you want it with
-   `omarchy bar move io.github.broken-branch.theoria`.
 
 Notes:
 

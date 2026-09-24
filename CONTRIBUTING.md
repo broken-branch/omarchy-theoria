@@ -13,7 +13,7 @@ renders a report, a plan or a clarify question, it opens the app for those — a
 ## Layout
 
 - `manifest.json` — the plugin contract: id `io.github.broken-branch.theoria`, one `bar-widget` entry point.
-- `Panel.qml` — the bar button and the panel. `RunCard.qml`, `RecentRuns.qml` — the two panel sections.
+- `Panel.qml` — the bar button and the panel. `InstallCard.qml`, `RunCard.qml`, `RecentRuns.qml` — the panel sections.
 - `Engine.qml` — discovery, polling, starting the engine, opening the window.
 - `engine/` — private Theoria dependency and its committed integrity lockfile; installed outside the plugin.
 - `spawn.js` — safe command, environment and curl-stdin construction for every spawned process.

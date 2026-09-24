@@ -23,6 +23,7 @@ Item {
   property bool pendingOpen: false
   property bool pinnedEngineInstalled: false
   property string pinnedEnginePackage: ""
+  signal briefAccepted()
 
   readonly property string home: Quickshell.env("HOME") || ""
   readonly property string discoveryPath: home + "/.local/share/theoria/server.json"
@@ -55,6 +56,7 @@ Item {
     pinnedEngineInstalled = Status.isPinnedEngine(content, pinnedEnginePackage)
     installCard = Status.installCard(content, pinnedEnginePackage, Qt.resolvedUrl("engine/package.json"))
     if (!pinnedEngineInstalled) unavailable()
+    else if (pendingOpen && !live) launchEngine()
   }
 
   function readDiscovery(content) {
@@ -69,6 +71,7 @@ Item {
   }
 
   function probe() {
+    if (installCard) enginePackage.reload()
     var url = Status.apiUrl(serverUrl, "/api/status")
     if (url === "" || statusProcess.running || missingProgram !== "") return
     var call = Spawn.statusCall(programs.curl, url)
@@ -83,6 +86,7 @@ Item {
     if (!parsed) {
       unavailable()
       if (pendingOpen) startEngine()
+      else if (serverUrl !== "") pollTimer.restart()
       return
     }
     status = parsed
@@ -123,6 +127,10 @@ Item {
       unavailable()
       return
     }
+    launchEngine()
+  }
+
+  function launchEngine() {
     if (missingProgram !== "") {
       startupError = "Missing program: " + missingProgram
       unavailable()
@@ -158,6 +166,7 @@ Item {
   function acceptOpen(output, requestedServerUrl) {
     var url = Status.openUrl(String(output || ""), requestedServerUrl)
     var command = Spawn.launchCommand(programs.launcher, url)
+    var acceptedBrief = pendingBrief !== ""
     pendingOpen = false
     pendingRunId = ""
     pendingBrief = ""
@@ -166,6 +175,7 @@ Item {
       return
     }
     openError = ""
+    if (acceptedBrief) briefAccepted()
     launchProcess.command = command
     launchProcess.running = true
   }
@@ -268,7 +278,7 @@ Item {
 
   Timer {
     id: pollTimer
-    interval: (root.panelOpen || root.status.run ? root.refreshIntervalSec : 60) * 1000
+    interval: (root.live && (root.panelOpen || root.status.run) ? root.refreshIntervalSec : 60) * 1000
     repeat: false
     onTriggered: root.probe()
   }
