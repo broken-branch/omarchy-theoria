@@ -1,42 +1,73 @@
 # Theoria for Omarchy
 
-![The Theoria panel in the Omarchy bar](preview.png)
+![Theoria research app](preview.png)
 
-One bar icon and one panel for Theoria, a local research and decision
-app: what the current run is doing and what it has spent, a box to start a run from a brief, the five most recent
-runs, and a button that opens the app window.
+## What Theoria is
 
-## Requirements
+Theoria answers a question or makes a decision for you, and shows its sources. You write a brief, such as "Should a
+small team adopt pnpm workspaces?" or "What changed in Wayland screen sharing this year?" You answer up to four
+clarifying questions and confirm a plan and a token budget. Then it works on its own. It splits the brief into
+sub-questions, researches each one on the web, and writes the report. Before you see it, a critic checks every claim
+against its sources.
 
-- Omarchy with `omarchy-shell` and `omarchy-launch-webapp`
-- Arch's `nodejs` package (Node 24 or newer at `/usr/bin/node`), `npm`, and `curl`
-- The Theoria version pinned in `engine/package.json`, installed from this plugin's committed lockfile into your home directory:
+You get back one of two things:
 
-  ```sh
-  mkdir -p ~/.local/share/theoria/engine
-  cp ~/.config/omarchy/plugins/io.github.broken-branch.theoria/engine/package.json ~/.config/omarchy/plugins/io.github.broken-branch.theoria/engine/package-lock.json ~/.local/share/theoria/engine/
-  npm ci --prefix ~/.local/share/theoria/engine --ignore-scripts
-  ~/.local/share/theoria/engine/node_modules/.bin/theoria doctor
-  ```
+- a **decision record**: a recommendation with its confidence, the reasoning, the risks, and what would change the
+  answer; or
+- a **research report**: what is known, with a citation on every claim, and open questions marked as open.
 
-  Theoria is MIT licensed; the installed dependency tree is about 290 MB. A shell `theoria` command is optional:
-  you can symlink it to `~/.local/share/theoria/engine/node_modules/.bin/theoria`. The panel always starts the
-  private engine and never runs a `theoria` found on your shell path. Keep `node_modules` outside the plugin folder;
-  Omarchy plugin validation refuses symlinks there. Theoria runs on a Claude, ChatGPT or Google subscription, an
-  OpenAI-compatible endpoint such as OpenRouter, or a local model under Ollama or llama.cpp.
+You read it in a page on your own machine. You can export it as Markdown, TXT or PDF for a person, or as a JSON bundle
+for another AI.
 
-An engine started by the panel has `PATH=/usr/local/bin:/usr/bin:/bin`. The `codex` and `gemini` providers need
-their CLIs in one of those directories; otherwise start Theoria from a shell.
+You pick one of four budget sizes before anything runs:
 
-## Install as an Omarchy plugin
+- **Quick** (300k tokens, a short answer) for a narrow question
+- **Standard** (1.2M) for most questions
+- **Deep** (2.5M) or **Exhaustive** (5M) when the question has several sides or being wrong is expensive
 
-```sh
-omarchy plugin add https://github.com/broken-branch/omarchy-theoria.git
-omarchy plugin enable io.github.broken-branch.theoria
-```
+It runs on AI you already have: a Claude, ChatGPT or Google subscription, an OpenAI-compatible endpoint such as
+OpenRouter, or a local model under Ollama or llama.cpp. Each stage can use a different one. Runs and settings stay on
+your machine. The only traffic is to the models you chose, plus the searches and web pages a run reads.
 
-A plugin lands disabled so you can read its code before enabling it. Put the widget where you want it with
-`omarchy bar move io.github.broken-branch.theoria`.
+Theoria is a separate, MIT-licensed app ([source](https://github.com/broken-branch/theoria) ·
+[npm](https://www.npmjs.com/package/theoria)). This plugin is its remote control in the Omarchy bar and contains none
+of Theoria's code.
+
+## Set up
+
+1. **Install Theoria.** The plugin runs one exact, reviewed version of Theoria, installed from this plugin's lockfile
+   into your home directory. It needs Arch's `nodejs` (Node 24 or newer), `npm` and `curl`, and takes about 290 MB.
+
+   ```sh
+   mkdir -p ~/.local/share/theoria/engine
+   cp ~/.config/omarchy/plugins/io.github.broken-branch.theoria/engine/package.json ~/.config/omarchy/plugins/io.github.broken-branch.theoria/engine/package-lock.json ~/.local/share/theoria/engine/
+   npm ci --prefix ~/.local/share/theoria/engine --ignore-scripts
+   ~/.local/share/theoria/engine/node_modules/.bin/theoria doctor
+   ```
+
+   `theoria doctor` prints `ok:` or `fix:` for each requirement.
+
+2. **Choose your AI.** Open Theoria and pick your vendor and model under **Settings**. The default is Claude through
+   Claude Code (`claude auth login`).
+
+3. **Add the plugin.** Omarchy needs `omarchy-shell` and `omarchy-launch-webapp`.
+
+   ```sh
+   omarchy plugin add https://github.com/broken-branch/omarchy-theoria.git
+   omarchy plugin enable io.github.broken-branch.theoria
+   ```
+
+   A plugin lands disabled so you can read its code before enabling it. Put the widget where you want it with
+   `omarchy bar move io.github.broken-branch.theoria`.
+
+Notes:
+
+- A shell `theoria` command is optional: you can symlink it to
+  `~/.local/share/theoria/engine/node_modules/.bin/theoria`. The panel always starts the private engine and never runs
+  a `theoria` found on your shell path. Keep `node_modules` outside the plugin folder; Omarchy plugin validation
+  refuses symlinks there.
+- An engine started by the panel has `PATH=/usr/local/bin:/usr/bin:/bin`. The `codex` and `gemini` providers need their
+  CLIs in one of those directories; otherwise start Theoria from a shell.
 
 To remove it:
 
@@ -49,6 +80,8 @@ Disabling takes the icon off the bar; removing deletes the plugin folder. Neithe
 its runs.
 
 ## Panel
+
+![The Theoria panel in the Omarchy bar](assets/panel.png)
 
 The bar always shows the Theoria mark. During a run it adds the stage and the tokens spent — "Researching · 118k" —
 or **Needs you** when the run is waiting for an answer. Click the icon for the panel, right-click to open the app.
@@ -75,7 +108,8 @@ and passes that link to `omarchy-launch-webapp`; the token reaches `curl` on std
 **Setup steps** opens this plugin's [GitHub README](https://github.com/broken-branch/omarchy-theoria#readme)
 through the same launcher. To start the engine,
 it reads `~/.local/share/theoria/engine/node_modules/theoria/package.json` and runs
-`~/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js` through `node` only when the package matches the Theoria version pinned in `engine/package.json`. The engine
+`~/.local/share/theoria/engine/node_modules/theoria/dist/cli/main.js` through `node` only when the package matches the
+Theoria version pinned in `engine/package.json`. The engine
 is detached from the panel. `node`, `curl` and the webapp launcher are resolved from
 `/usr/local/bin:/usr/bin:/bin` and run with a minimal environment. It holds no key, stores nothing and sends
 its status and open API requests only to the loopback engine. Opening Setup steps visits GitHub in the browser.
