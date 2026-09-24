@@ -53,10 +53,11 @@ Item {
   }
 
   function readEnginePackage(content) {
+    var wasInstalled = pinnedEngineInstalled
     pinnedEngineInstalled = Status.isPinnedEngine(content, pinnedEnginePackage)
     installCard = Status.installCard(content, pinnedEnginePackage, Qt.resolvedUrl("engine/package.json"))
-    if (!pinnedEngineInstalled) unavailable()
-    else if (pendingOpen && !live) launchEngine()
+    if (wasInstalled && !pinnedEngineInstalled) unavailable()
+    if (pinnedEngineInstalled && pendingOpen && !live) launchEngine()
   }
 
   function readDiscovery(content) {
@@ -300,6 +301,7 @@ Item {
       discoveryRetry.stop()
       root.starting = false
       root.pendingOpen = false
+      root.pendingBrief = ""
       root.startupError = "Theoria did not start"
     }
   }
