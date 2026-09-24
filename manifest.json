@@ -5,7 +5,7 @@
   "version": "0.4.0",
   "author": "broken-branch",
   "license": "MIT",
-  "description": "Watch and drive Theoria from the Omarchy bar: what the current research run is doing, what it has spent, a box to start a new one, and your recent runs. Theoria runs on Claude, ChatGPT, Gemini or a local model.",
+  "description": "Theoria researches a question or a decision on its own and hands back a cited, checked report. It runs on Claude, ChatGPT, Gemini, OpenRouter or a local model. This plugin puts it in your Omarchy bar: the current run's stage and spend, a box to start a new run, and your recent runs. Theoria itself is installed separately (see the README).",
   "kinds": [
     "bar-widget"
   ],
@@ -15,7 +15,7 @@
   },
   "barWidget": {
     "displayName": "Theoria",
-    "description": "One bar icon and one panel for Theoria: the running research or decision run, its spend, a brief box, and the recent runs. Theoria itself runs on Claude, ChatGPT, Gemini or any OpenAI-compatible model, including a local one.",
+    "description": "The running Theoria research or decision run with its stage and spend, a brief box, and your five most recent runs.",
     "category": "AI",
     "aliases": [
       "theoria"
